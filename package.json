@@ -1,0 +1,19 @@
+{
+  "name": "ecommerce-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready e-commerce platform - Next.js client + Express API server",
+  "scripts": {
+    "setup": "npm run install:all && npm run seed",
+    "install:all": "cd server && npm.cmd install && cd ../client && npm.cmd install",
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "cd server && npm.cmd run dev",
+    "dev:client": "cd client && npm.cmd run dev",
+    "build": "cd client && npm.cmd run build",
+    "start": "cd server && npm.cmd start",
+    "seed": "cd server && npm.cmd run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: saso-server
+    runtime: node
+    region: oregon
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://saso-client.onrender.com
+      - key: STORE_NAME
+        value: saso
+      - key: UPI_VPA
+        value: vetrisakratese0508-1@oksbi
+      - key: UPI_MERCHANT_NAME
+        value: saso
+      - key: ALLOW_TEST_PAYMENTS
+        value: "true"
+      - key: PORT
+        value: 4000
+
+  - type: web
+    name: saso-client
+    runtime: node
+    region: oregon
+    rootDir: client
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://saso-server.onrender.com/api
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /
