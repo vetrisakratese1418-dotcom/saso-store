@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, Package, Heart, LogOut } from 'lucide-react';
+import { User, Package, Heart, RotateCcw, LogOut, KeyRound } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { AuthGuard } from '@/components/AuthGuard';
 
@@ -14,6 +14,8 @@ export default function AccountLayout({ children }) {
     { href: '/account', label: 'Profile', icon: User },
     { href: '/account/orders', label: 'Orders', icon: Package },
     { href: '/wishlist', label: 'Wishlist', icon: Heart },
+    { href: '/returns', label: 'Returns', icon: RotateCcw },
+    { href: '/account/password', label: 'Password', icon: KeyRound },
   ];
 
   return (

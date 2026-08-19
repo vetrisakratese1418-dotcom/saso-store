@@ -14,10 +14,10 @@ export function ProductCard({ product, index = 0 }) {
 
   return (
     <div
-      className="group relative flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-hairline bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5 anim-fade-up"
+      className="group relative flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-hairline bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5 anim-fade-up press-effect"
       style={{ animationDelay: `${Math.min(index, 7) * 0.05}s` }}
     >
-      <Link href={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-foreground/5">
+      <Link href={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-foreground/5 no-select">
         <Img
           src={product.images?.[0]}
           alt={product.name}
@@ -43,7 +43,7 @@ export function ProductCard({ product, index = 0 }) {
           toggleWishlist(product);
         }}
         aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-        className={`absolute right-2 top-2 sm:right-3 sm:top-3 flex size-9 items-center justify-center rounded-full border backdrop-blur transition-all active:scale-90 ${
+        className={`absolute right-2 top-2 sm:right-3 sm:top-3 flex size-10 items-center justify-center rounded-full border backdrop-blur transition-all active:scale-90 press-effect ${
           wished
             ? 'border-red-300 bg-red-500 text-white'
             : 'border-white/60 bg-white/80 text-foreground hover:scale-110 dark:bg-black/50'
@@ -74,8 +74,8 @@ export function ProductCard({ product, index = 0 }) {
         </div>
         <button
           disabled={outOfStock}
-          onClick={() => addToCart(product)}
-          className="mt-2.5 sm:mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-2.5 text-[13px] sm:text-sm font-medium text-background transition-all hover:opacity-80 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
+          className="mt-2.5 sm:mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-2.5 text-[13px] sm:text-sm font-medium text-background transition-all hover:opacity-80 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 press-effect min-h-[44px]"
         >
           <ShoppingBag size={15} />
           {outOfStock ? 'Out of stock' : 'Add to bag'}

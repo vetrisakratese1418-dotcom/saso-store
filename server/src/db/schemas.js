@@ -2,6 +2,25 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
+const VariantSchema = new Schema(
+  {
+    name: { type: String, default: '' },
+    options: [{ type: String }],
+  },
+  { _id: false },
+);
+
+const ProductVariantValueSchema = new Schema(
+  {
+    values: { type: Object, default: {} },
+    price: { type: Number, default: 0 },
+    stock: { type: Number, default: 0 },
+    sku: { type: String, default: '' },
+    image: { type: String, default: '' },
+  },
+  { _id: false },
+);
+
 const ProductSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -27,6 +46,8 @@ const ProductSchema = new Schema(
     salesCount: { type: Number, default: 0 },
     seoTitle: { type: String, default: '' },
     seoDescription: { type: String, default: '' },
+    variants: [VariantSchema],
+    variantValues: [ProductVariantValueSchema],
   },
   { timestamps: true },
 );
@@ -53,6 +74,7 @@ const UserSchema = new Schema(
     phone: { type: String, default: '' },
     avatar: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
+    emailVerified: { type: Boolean, default: false },
     address: {
       line1: String,
       line2: String,
@@ -126,6 +148,7 @@ const OrderSchema = new Schema(
     },
     timeline: [{ status: String, at: Date, note: String }],
     notes: { type: String, default: '' },
+    returnRequest: { type: Object, default: null },
   },
   { timestamps: true },
 );
@@ -242,6 +265,57 @@ const PaymentComplaintSchema = new Schema(
   { timestamps: true },
 );
 
+const PasswordResetTokenSchema = new Schema(
+  {
+    userId: { type: String, required: true, index: true },
+    token: { type: String, required: true, unique: true },
+    expiresAt: { type: Date, required: true },
+    used: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
+const EmailVerificationSchema = new Schema(
+  {
+    userId: { type: String, required: true, index: true },
+    token: { type: String, required: true, unique: true },
+    expiresAt: { type: Date, required: true },
+    verified: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
+const WishlistSchema = new Schema(
+  {
+    userId: { type: String, required: true, index: true },
+    productId: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+const CartSchema = new Schema(
+  {
+    userId: { type: String, required: true, index: true },
+    productId: { type: String, required: true },
+    qty: { type: Number, default: 1 },
+  },
+  { timestamps: true },
+);
+
+const ReturnRequestSchema = new Schema(
+  {
+    orderNumber: { type: String, required: true, index: true },
+    userId: { type: String, default: '' },
+    customerEmail: { type: String, default: '' },
+    items: [{ productId: String, name: String, qty: Number, reason: String }],
+    reason: { type: String, default: '' },
+    status: { type: String, enum: ['pending', 'approved', 'rejected', 'refunded', 'completed'], default: 'pending' },
+    refundAmount: { type: Number, default: 0 },
+    adminNote: { type: String, default: '' },
+  },
+  { timestamps: true },
+);
+
 export const Models = {
   users: mongoose.models.users || mongoose.model('users', UserSchema),
   products: mongoose.models.products || mongoose.model('products', ProductSchema),
@@ -258,4 +332,14 @@ export const Models = {
     mongoose.models.paymentSessions || mongoose.model('paymentSessions', PaymentSessionSchema),
   paymentComplaints:
     mongoose.models.paymentComplaints || mongoose.model('paymentComplaints', PaymentComplaintSchema),
+  passwordResetTokens:
+    mongoose.models.passwordResetTokens || mongoose.model('passwordResetTokens', PasswordResetTokenSchema),
+  emailVerifications:
+    mongoose.models.emailVerifications || mongoose.model('emailVerifications', EmailVerificationSchema),
+  wishlists:
+    mongoose.models.wishlists || mongoose.model('wishlists', WishlistSchema),
+  carts:
+    mongoose.models.carts || mongoose.model('carts', CartSchema),
+  returnRequests:
+    mongoose.models.returnRequests || mongoose.model('returnRequests', ReturnRequestSchema),
 };

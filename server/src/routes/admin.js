@@ -350,6 +350,11 @@ router.patch('/orders/:id/status', wrap(async (req, res) => {
     html: orderHtml('orderStatus', { order: { ...order, status } }),
   }).catch(() => {});
 
+  try {
+    const { broadcastOrderUpdate } = await import('./sse.js');
+    broadcastOrderUpdate(order.orderNumber, { type: 'status', status, orderNumber: order.orderNumber, note });
+  } catch {}
+
   res.json(updated || order);
 }));
 

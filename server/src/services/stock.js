@@ -80,6 +80,14 @@ export async function computeShipping(subtotal, couponDiscount = 0) {
   return fee;
 }
 
+export async function computeTax(subtotal, shipping = 0) {
+  const store = await getStore();
+  const taxRate = Number(await store.getSetting('taxRate', '0')) || 0;
+  if (taxRate <= 0) return 0;
+  const taxable = Math.max(0, subtotal + shipping);
+  return Math.round((taxable * taxRate / 100) * 100) / 100;
+}
+
 export function computeTotals(items) {
   const subtotal = Math.round(items.reduce((s, it) => s + it.price * it.qty, 0) * 100) / 100;
   return subtotal;

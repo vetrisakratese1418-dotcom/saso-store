@@ -1,0 +1,69 @@
+{
+  "name": "saso — Premium Online Store",
+  "short_name": "saso",
+  "description": "Shop the latest premium products online. Fast delivery, easy returns, secure payments.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0071e3",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "ecommerce"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Shop Now",
+      "short_name": "Shop",
+      "url": "/shop",
+      "description": "Browse all products"
+    },
+    {
+      "name": "My Orders",
+      "short_name": "Orders",
+      "url": "/account/orders",
+      "description": "View your order history"
+    },
+    {
+      "name": "Wishlist",
+      "url": "/wishlist",
+      "description": "View your saved items"
+    }
+  ],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "url_handlers": []
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Upload, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Upload, Sparkles, X } from 'lucide-react';
 import { api, API_URL } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Button, Input, Textarea, Spinner } from '@/components/ui';
@@ -12,6 +12,7 @@ const EMPTY = {
   name: '', sku: '', brand: '', category: '', subcategory: '', price: '', compareAtPrice: '',
   costPrice: '', stock: '0', lowStockThreshold: '5', images: [''], tags: '',
   shortDescription: '', description: '', isActive: true, isFeatured: false, seoTitle: '', seoDescription: '',
+  variants: [],
 };
 
 const MIN_RELATED = 3;
@@ -144,6 +145,7 @@ export function ProductForm({ productId }) {
             images: p.images?.length ? p.images : [''], tags: (p.tags || []).join(', '),
             shortDescription: p.shortDescription || '', description: p.description || '',
             isActive: p.isActive, isFeatured: p.isFeatured, seoTitle: p.seoTitle || '', seoDescription: p.seoDescription || '',
+            variants: p.variants || [],
           }),
         )
         .catch((e) => toast(e.message, 'error'))
@@ -166,6 +168,7 @@ export function ProductForm({ productId }) {
       lowStockThreshold: parseInt(form.lowStockThreshold) || 5,
       images: relatedFor(form.name, form.category, form.images),
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      variants: form.variants || [],
       isActive: !!form.isActive,
       isFeatured: !!form.isFeatured,
     };
@@ -272,6 +275,58 @@ export function ProductForm({ productId }) {
             Featured on home page
           </label>
         </div>
+      </div>
+
+      <div className="rounded-3xl border border-hairline bg-card p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">Variants</h2>
+          <Button type="button" variant="secondary" size="sm" onClick={() => set('variants', [...(form.variants || []), { name: '', options: [''] }])}>
+            <Plus size={13} /> Add variant
+          </Button>
+        </div>
+        {(form.variants || []).length === 0 && (
+          <p className="mt-4 text-sm text-muted">No variants. Add options like Size, Color, etc.</p>
+        )}
+        <div className="mt-4 space-y-4">
+          {(form.variants || []).map((v, vi) => (
+            <div key={vi} className="rounded-xl border border-hairline bg-background p-4">
+              <div className="flex items-center gap-3">
+                <Input label="Variant name" value={v.name} onChange={(e) => {
+                  const next = [...form.variants];
+                  next[vi] = { ...next[vi], name: e.target.value };
+                  set('variants', next);
+                }} placeholder="e.g. Size, Color" className="flex-1" />
+                <button type="button" onClick={() => set('variants', form.variants.filter((_, i) => i !== vi))} className="mt-5 text-muted hover:text-danger"><Trash2 size={15} /></button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {v.options.map((opt, oi) => (
+                  <div key={oi} className="flex items-center gap-1">
+                    <input value={opt} onChange={(e) => {
+                      const next = [...form.variants];
+                      next[vi] = { ...next[vi], options: next[vi].options.map((o, j) => j === oi ? e.target.value : o) };
+                      set('variants', next);
+                    }} className="w-28 rounded-lg border border-hairline bg-card px-2.5 py-1.5 text-sm" placeholder={`Option ${oi + 1}`} />
+                    {v.options.length > 1 && (
+                      <button type="button" onClick={() => {
+                        const next = [...form.variants];
+                        next[vi] = { ...next[vi], options: next[vi].options.filter((_, j) => j !== oi) };
+                        set('variants', next);
+                      }} className="text-muted hover:text-danger"><X size={12} /></button>
+                    )}
+                  </div>
+                ))}
+                <Button type="button" variant="ghost" size="sm" onClick={() => {
+                  const next = [...form.variants];
+                  next[vi] = { ...next[vi], options: [...next[vi].options, ''] };
+                  set('variants', next);
+                }}><Plus size={12} /></Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {form.variants?.length > 0 && (
+          <p className="mt-3 text-xs text-muted">Define variant names (e.g. "Color") and their options (e.g. "Red", "Blue"). Customers will select these when ordering.</p>
+        )}
       </div>
 
       <div className="rounded-3xl border border-hairline bg-card p-6">

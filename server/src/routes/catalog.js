@@ -21,7 +21,7 @@ async function getPublicSettings() {
   const keys = [
     'storeName', 'announcement', 'currency', 'currencySymbol',
     'heroTitle', 'heroSubtitle', 'featuredBannerTitle', 'featuredBannerSubtitle',
-    'featuredBannerLink', 'newsletterEnabled',
+    'featuredBannerLink', 'newsletterEnabled', 'taxRate',
   ];
   const out = {};
   for (const k of keys) out[k] = await store.getSetting(k, '');
@@ -30,6 +30,8 @@ async function getPublicSettings() {
   out.currencySymbol = out.currencySymbol || env.currencySymbol;
   out.freeShippingThreshold = Number(await store.getSetting('freeShippingThreshold', String(env.freeShippingThreshold))) || env.freeShippingThreshold;
   out.shippingFee = Number(await store.getSetting('shippingFee', String(env.shippingFee))) || env.shippingFee;
+  out.taxRate = Number(out.taxRate) || 0;
+  out.supportedCurrencies = ['INR', 'USD', 'EUR', 'GBP', 'AED'];
   return out;
 }
 

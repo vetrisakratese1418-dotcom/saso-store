@@ -9,7 +9,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: JWT_SECRET
+        generateValue: true
       - key: CLIENT_URL
+        value: https://saso-client.onrender.com
+      - key: PUBLIC_BASE_URL
         value: https://saso-client.onrender.com
       - key: STORE_NAME
         value: saso
@@ -32,6 +36,8 @@ services:
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://saso-server.onrender.com/api
+      - key: NEXT_PUBLIC_GA_ID
+        value: ""
       - key: NODE_ENV
         value: production
     healthCheckPath: /

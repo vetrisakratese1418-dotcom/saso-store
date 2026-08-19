@@ -25,6 +25,7 @@ export function StoreProvider({ children }) {
   const [wishlist, setWishlist] = useState([]);
   const [theme, setThemeState] = useState('light');
   const [settings, setSettings] = useState(null);
+  const [currency, setCurrency] = useState(null);
   const [toasts, setToasts] = useState([]);
   const toastId = useRef(0);
 
@@ -47,7 +48,22 @@ export function StoreProvider({ children }) {
         })
         .catch(() => {});
     }
-    fetchSettings().then((s) => s && setSettings(s));
+    fetchSettings().then((s) => {
+      if (s) {
+        const savedCurrency = typeof window !== 'undefined' ? localStorage.getItem('shopora_currency') : null;
+        if (savedCurrency) {
+          try {
+            const c = JSON.parse(savedCurrency);
+            setCurrency(c);
+            setSettings({ ...s, currency: c.code, currencySymbol: c.symbol });
+          } catch {
+            setSettings(s);
+          }
+        } else {
+          setSettings(s);
+        }
+      }
+    });
   }, []);
 
   const applyTheme = (t) => {
@@ -235,7 +251,7 @@ export function StoreProvider({ children }) {
     [
       user, booted, login, register, logout, updateUser, refreshUser, cart, cartCount, cartSubtotal,
       addToCart, updateQty, removeFromCart, clearCart, wishlist, toggleWishlist, isWishlisted,
-      theme, toggleTheme, settings, toast, toasts,
+      theme, toggleTheme, settings, currency, toast, toasts,
     ],
   );
 

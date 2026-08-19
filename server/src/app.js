@@ -15,6 +15,8 @@ import authRoutes from './routes/auth.js';
 import catalogRoutes from './routes/catalog.js';
 import checkoutRoutes, { markPaidByOrderNumber } from './routes/checkout.js';
 import adminRoutes from './routes/admin.js';
+import userRoutes from './routes/user.js';
+import sseRoutes from './routes/sse.js';
 import { verifyCashfreeWebhook, verifyStripeWebhook, verifyUpiWebhook } from './services/payments.js';
 import { getStore } from './db/index.js';
 
@@ -107,6 +109,8 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api', catalogRoutes);
   app.use('/api', checkoutRoutes);
+  app.use('/api', userRoutes);
+  app.use('/api', sseRoutes);
   app.use('/api/admin', adminRoutes);
 
   app.use(notFound);

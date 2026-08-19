@@ -27,6 +27,7 @@ export default function AdminSettings() {
         featuredBannerTitle: s.featuredBannerTitle || '', featuredBannerSubtitle: s.featuredBannerSubtitle || '',
         featuredBannerLink: s.featuredBannerLink || '', newsletterEnabled: s.newsletterEnabled !== 'false',
         freeShippingThreshold: s.freeShippingThreshold || 499, shippingFee: s.shippingFee || 49,
+        taxRate: s.taxRate || 0,
       });
       const u = me.user || me;
       setAcctForm({ name: u.name || '', email: u.email || '' });
@@ -168,12 +169,13 @@ export default function AdminSettings() {
       </div>
 
       <div className="rounded-3xl border border-hairline bg-card p-6">
-        <h3 className="text-base font-semibold">Shipping</h3>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Input label="Free shipping threshold (₹)" type="number" min="0" value={form.freeShippingThreshold} onChange={(e) => set('freeShippingThreshold', e.target.value)} />
-          <Input label="Shipping fee (₹)" type="number" min="0" value={form.shippingFee} onChange={(e) => set('shippingFee', e.target.value)} />
+        <h3 className="text-base font-semibold">Shipping & Tax</h3>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <Input label="Free shipping threshold" type="number" min="0" value={form.freeShippingThreshold} onChange={(e) => set('freeShippingThreshold', e.target.value)} />
+          <Input label="Shipping fee" type="number" min="0" value={form.shippingFee} onChange={(e) => set('shippingFee', e.target.value)} />
+          <Input label="Tax rate (%)" type="number" min="0" max="100" step="0.1" value={form.taxRate} onChange={(e) => set('taxRate', e.target.value)} />
         </div>
-        <p className="mt-3 text-xs text-muted">Orders at or above the threshold ship free; otherwise the flat fee applies.</p>
+        <p className="mt-3 text-xs text-muted">Set tax rate as a percentage (e.g. 18 for GST). Orders above the threshold ship free.</p>
       </div>
 
       <div className="rounded-3xl border border-hairline bg-card p-6">

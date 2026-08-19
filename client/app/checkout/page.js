@@ -13,6 +13,8 @@ import { Button, Input, Textarea, Spinner } from '@/components/ui';
 import { CheckoutSkeleton } from '@/components/Skeletons';
 import { formatPrice } from '@/lib/format';
 
+const CURRENCY_SYMBOLS = { INR: '₹', USD: '$', EUR: '€', GBP: '£', AED: 'د.إ' };
+
 function loadScript(src) {
   return new Promise((resolve) => {
     if (window.document.querySelector(`script[src="${src}"]`)) return resolve(true);
@@ -241,7 +243,9 @@ function CheckoutInner() {
   const discount = appliedCoupon?.discount || 0;
   const subtotalAfterCoupon = Math.max(0, cartSubtotal - discount);
   const shipping = subtotalAfterCoupon >= (settings?.freeShippingThreshold ?? 499) ? 0 : (settings?.shippingFee ?? 49);
-  const total = subtotalAfterCoupon + shipping;
+  const taxRate = Number(settings?.taxRate) || 0;
+  const tax = Math.round((subtotalAfterCoupon + shipping) * taxRate / 100 * 100) / 100;
+  const total = subtotalAfterCoupon + shipping + tax;
 
   const applyCoupon = async () => {
     if (!coupon.trim()) return;
@@ -424,6 +428,59 @@ function CheckoutInner() {
         return;
       }
 
+      if (payment?.provider === 'razorpay') {
+        const razorpayFlow = async (session, payment) => {
+          const ok = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+          if (!ok) throw new Error('Could not load Razorpay checkout');
+          const curSymbol = CURRENCY_SYMBOLS[session?.totals?.currency || 'INR'] || '₹';
+          return new Promise((resolve, reject) => {
+            const rz = new window.Razorpay({
+              key: payment.keyId,
+              amount: payment.amount * 100,
+              currency: payment.currency || 'INR',
+              name: addr.name || 'Store',
+              description: `Order ${session.orderNumber}`,
+              order_id: payment.orderId,
+              handler: async (response) => {
+                try {
+                  const vr = await api('/payments/verify', {
+                    method: 'POST',
+                    body: {
+                      orderNumber: session.orderNumber,
+                      paymentMethod: 'razorpay',
+                      reference: {
+                        razorpayOrderId: response.razorpay_order_id,
+                        razorpayPaymentId: response.razorpay_payment_id,
+                        razorpaySignature: response.razorpay_signature,
+                      },
+                    },
+                  });
+                  if (vr?.verified) resolve(vr);
+                  else reject(new Error('Payment verification failed'));
+                } catch (err) {
+                  reject(err);
+                }
+              },
+              prefill: { name: addr.name, email: addr.email, contact: addr.phone },
+              theme: { color: '#0071e3' },
+            });
+            rz.on('payment.failed', (response) => {
+              reject(new Error(response.error?.description || 'Payment failed'));
+            });
+            rz.open();
+          });
+        };
+        const vr = await razorpayFlow(session, payment);
+        if (vr?.order) {
+          clearCart();
+          setOrder(vr.order);
+          toast('Payment successful!', 'success');
+        } else {
+          setOrder(session);
+        }
+        return;
+      }
+
       clearCart();
       setOrder(session);
     } catch (err) {
@@ -479,6 +536,7 @@ function CheckoutInner() {
     stripe: { icon: CreditCard, desc: 'Pay securely with Stripe' },
     paypal: { icon: Wallet, desc: 'Pay with your PayPal account' },
     upi: { icon: Smartphone, desc: 'Google Pay, PhonePe & Paytm' },
+    razorpay: { icon: CreditCard, desc: 'UPI, cards, net banking via Razorpay' },
   };
 
   return (
@@ -590,12 +648,12 @@ function CheckoutInner() {
           </section>
         </div>
 
-        <div className="order-2 h-fit rounded-3xl border border-hairline bg-card p-5 sm:p-6 lg:order-none lg:sticky lg:top-24">
+        <div className="order-2 h-fit rounded-3xl border border-hairline bg-card p-4 sm:p-5 lg:order-none lg:sticky lg:top-24 lg:p-6">
           <h2 className="text-base font-semibold sm:text-lg">Order summary</h2>
           <div className="mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
             {cart.map((item) => (
               <div key={item.productId} className="flex items-center gap-3">
-                <Img src={item.image} alt="" className="size-12 object-cover" rounded="rounded-xl" />
+                <Img src={item.image} alt="" className="size-12 shrink-0 object-cover" rounded="rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-1 text-xs font-medium sm:text-sm">{item.name}</p>
                   <p className="text-xs text-muted">Qty: {item.qty}</p>
@@ -620,6 +678,12 @@ function CheckoutInner() {
               <span className="text-muted">Shipping</span>
               <span>{shipping === 0 ? 'Free' : formatPrice(shipping, settings)}</span>
             </div>
+            {tax > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted">Tax ({taxRate}%)</span>
+                <span>{formatPrice(tax, settings)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-hairline pt-3 text-base font-semibold">
               <span>Total</span>
               <span>{formatPrice(total, settings)}</span>
@@ -638,13 +702,13 @@ function CheckoutInner() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 z-[60] border-t border-hairline bg-card/95 p-4 backdrop-blur-lg safe-bottom lg:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+      <div className="fixed bottom-0 inset-x-0 z-[60] border-t border-hairline bg-card/95 backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <div className="min-w-0">
             <p className="text-xs text-muted">Total</p>
             <p className="text-lg font-semibold">{formatPrice(total, settings)}</p>
           </div>
-          <Button className="shrink-0" size="lg" loading={placing} onClick={placeOrder}>
+          <Button className="shrink-0 min-h-[48px]" size="lg" loading={placing} onClick={placeOrder}>
             {paymentMethod === 'cod' ? 'Place order' : 'Pay & place order'}
           </Button>
         </div>

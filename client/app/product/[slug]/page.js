@@ -85,13 +85,24 @@ export default function ProductPage({ params }) {
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
     touchDeltaX.current = 0;
+    if (swipeImgRef.current) {
+      swipeImgRef.current.style.transition = 'none';
+    }
   };
 
   const handleTouchMove = (e) => {
     touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+    if (swipeImgRef.current && Math.abs(touchDeltaX.current) > 10) {
+      const offset = -touchDeltaX.current * 0.3;
+      swipeImgRef.current.style.transform = `translateX(${offset}px)`;
+    }
   };
 
   const handleTouchEnd = () => {
+    if (swipeImgRef.current) {
+      swipeImgRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      swipeImgRef.current.style.transform = 'translateX(0)';
+    }
     const images = product?.images?.length ? product.images : [product.image];
     if (images.length <= 1) return;
     const threshold = 50;
@@ -115,11 +126,11 @@ export default function ProductPage({ params }) {
   const images = product.images?.length ? product.images : [product.image];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 page-transition">
       <nav className="mb-4 flex items-center gap-1.5 text-sm text-muted sm:mb-6">
-        <Link href="/" className="hover:text-foreground">Home</Link>
+        <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
         <span>/</span>
-        <Link href={`/shop?category=${encodeURIComponent(product.category)}`} className="hover:text-foreground">
+        <Link href={`/shop?category=${encodeURIComponent(product.category)}`} className="hover:text-foreground transition-colors">
           {product.category}
         </Link>
         {product.subcategory && (
@@ -134,7 +145,7 @@ export default function ProductPage({ params }) {
         <div className="anim-fade-in">
           <div
             ref={swipeImgRef}
-            className="overflow-hidden rounded-2xl border border-hairline bg-card sm:rounded-3xl"
+            className="overflow-hidden rounded-2xl border border-hairline bg-card sm:rounded-3xl touch-pan-x"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -148,13 +159,13 @@ export default function ProductPage({ params }) {
           </div>
           {images.length > 1 && (
             <>
-              <div className="mt-2 flex items-center justify-center gap-1.5 sm:hidden">
+              <div className="mt-3 flex items-center justify-center gap-2 sm:hidden">
                 {images.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveImg(i)}
-                    className={`size-1.5 rounded-full transition ${
-                      i === activeImg ? 'bg-blue' : 'bg-muted/40'
+                    className={`transition-all duration-300 rounded-full press-effect ${
+                      i === activeImg ? 'bg-blue w-6 h-2' : 'bg-muted/30 w-2 h-2'
                     }`}
                     aria-label={`Image ${i + 1}`}
                   />
@@ -165,8 +176,8 @@ export default function ProductPage({ params }) {
                   <button
                     key={i}
                     onClick={() => setActiveImg(i)}
-                    className={`overflow-hidden rounded-2xl border-2 transition ${
-                      i === activeImg ? 'border-blue' : 'border-transparent opacity-70 hover:opacity-100'
+                    className={`overflow-hidden rounded-2xl border-2 transition-all duration-200 press-effect ${
+                      i === activeImg ? 'border-blue scale-105' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
                     <Img src={img} alt="" className="size-20 object-cover" rounded="" />
@@ -380,13 +391,13 @@ export default function ProductPage({ params }) {
       )}
 
       {!outOfStock && (
-        <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-hairline bg-card/95 px-4 py-3 backdrop-blur-sm safe-bottom sm:hidden">
-          <div className="flex items-center gap-3">
+        <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-hairline bg-card/95 backdrop-blur-xl safe-bottom sm:hidden" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+          <div className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-shrink-0">
               <Price price={product.price} compareAt={product.compareAtPrice} settings={settings} />
             </div>
             <Button
-              className="min-h-[48px] flex-1 px-4 text-sm"
+              className="min-h-[48px] flex-1 px-4 text-sm press-effect"
               onClick={() => {
                 addToCart(product, qty);
                 setQty(1);
@@ -396,7 +407,7 @@ export default function ProductPage({ params }) {
             </Button>
             <Button
               variant="outline"
-              className="min-h-[48px] px-4 text-sm"
+              className="min-h-[48px] px-4 text-sm press-effect"
               onClick={() => {
                 addToCart(product, 1);
                 router.push('/checkout');

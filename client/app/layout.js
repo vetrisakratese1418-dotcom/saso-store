@@ -17,6 +17,7 @@ export const metadata = {
     icon: '/favicon.svg',
     apple: '/apple-touch-icon.svg',
   },
+  manifest: '/manifest.json',
   openGraph: {
     title: 'saso — Premium Online Store',
     description: 'Premium products curated for everyday life.',
@@ -63,6 +64,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="saso" />
         <meta name="format-detection" content="telephone=yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -72,9 +74,24 @@ export default function RootLayout({ children }) {
                   if (t === 'dark') document.documentElement.classList.add('dark');
                 } catch(e){}
               })();
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(){});
+                });
+              }
             `,
           }}
         />
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}',{page_path:window.location.pathname});`,
+              }}
+            />
+          </>
+        )}
       </head>
       <body className="min-h-dvh">
         <StoreProvider>

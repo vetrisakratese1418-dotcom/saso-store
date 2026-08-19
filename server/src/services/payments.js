@@ -4,6 +4,9 @@ import { env } from '../config/env.js';
 
 const stripe = env.stripe.secretKey ? new Stripe(env.stripe.secretKey) : null;
 
+const razorpayKeyId = env.razorpay.keyId;
+const razorpayKeySecret = env.razorpay.keySecret;
+
 const PAYPAL_API = env.paypal.mode === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com';
@@ -105,6 +108,26 @@ export function availableMethods() {
       enabled: true,
       gateway: 'paypal',
       testMode: true,
+    });
+  }
+
+  if (razorpayKeyId) {
+    methods.push({
+      id: 'razorpay',
+      label: 'Razorpay (UPI, Cards, NetBanking)',
+      enabled: true,
+      gateway: 'razorpay',
+      testMode: !env.razorpay.isLive,
+      keyId: razorpayKeyId,
+    });
+  } else if (env.allowTestPayments) {
+    methods.push({
+      id: 'razorpay',
+      label: 'Razorpay (UPI, Cards, NetBanking)',
+      enabled: true,
+      gateway: 'razorpay',
+      testMode: true,
+      keyId: null,
     });
   }
 
@@ -266,6 +289,40 @@ export async function createPayment({ method, amount, orderNumber, currency = en
     };
   }
 
+  if (method === 'razorpay') {
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      if (env.allowTestPayments) {
+        return { provider: 'test', requiresAction: true, testRef: testRef(orderNumber) };
+      }
+      throw new Error('Razorpay is not configured. Please add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to your .env file.');
+    }
+    const auth = Buffer.from(`${razorpayKeyId}:${razorpayKeySecret}`).toString('base64');
+    const rzRes = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: amt * 100,
+        currency,
+        receipt: orderNumber,
+        notes: { orderNumber },
+      }),
+    });
+    const rzData = await rzRes.json();
+    if (!rzRes.ok) throw new Error(rzData.error?.description || `Razorpay order creation failed (${rzRes.status})`);
+    return {
+      provider: 'razorpay',
+      requiresAction: true,
+      orderId: rzData.id,
+      keyId: razorpayKeyId,
+      amount: amt,
+      currency,
+      isLive: env.razorpay.isLive,
+      customerName: customerName || '',
+      customerEmail: customerEmail || '',
+      customerPhone: customerPhone || '',
+    };
+  }
+
   if (method === 'paypal') {
     if (!env.paypal.clientId) {
       if (env.allowTestPayments) {
@@ -353,6 +410,24 @@ export async function verifyPayment({ method, orderNumber, amount, reference }) 
       return { verified: true, transactionId: reference.paymentIntentId };
     }
     return { verified: false, reason: 'Could not verify Stripe payment' };
+  }
+
+  if (method === 'razorpay') {
+    if (razorpayKeyId && razorpayKeySecret && reference?.razorpayOrderId && reference?.razorpayPaymentId) {
+      const auth = Buffer.from(`${razorpayKeyId}:${razorpayKeySecret}`).toString('base64');
+      const rzRes = await fetch(`https://api.razorpay.com/v1/payments/${reference.razorpayPaymentId}/fetch`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      const payment = await rzRes.json();
+      if (rzRes.ok && payment.status === 'captured') {
+        return { verified: true, transactionId: payment.id };
+      }
+      return { verified: false, reason: 'Razorpay payment not captured' };
+    }
+    if (env.allowTestPayments && reference?.razorpayOrderId) {
+      return { verified: true, transactionId: reference.razorpayOrderId };
+    }
+    return { verified: false, reason: 'Could not verify Razorpay payment' };
   }
 
   if (method === 'paypal') {

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Package, ShoppingCart, Users, Tags, Ticket, Boxes, Megaphone, Settings, LogOut,
+  LayoutDashboard, Package, ShoppingCart, Users, Tags, Ticket, Boxes, Megaphone, Settings, LogOut, RotateCcw,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -16,6 +16,7 @@ const NAV = [
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
   { href: '/admin/inventory', label: 'Inventory', icon: Boxes },
+  { href: '/admin/returns', label: 'Returns', icon: RotateCcw },
   { href: '/admin/newsletter', label: 'Newsletter', icon: Megaphone },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];

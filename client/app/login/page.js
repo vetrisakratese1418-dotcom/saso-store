@@ -59,6 +59,15 @@ function LoginInner() {
             placeholder="••••••••"
             className="min-h-[48px] text-base sm:min-h-0 sm:text-sm"
           />
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" className="size-3.5 rounded accent-blue" />
+              Remember me
+            </label>
+            <Link href="/forgot-password" className="text-sm font-medium text-blue hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <Button type="submit" className="w-full min-h-[52px]" size="lg" loading={loading}>
             Sign in

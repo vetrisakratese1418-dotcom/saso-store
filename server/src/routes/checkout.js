@@ -4,7 +4,7 @@ import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errors.js';
 import { sanitizeField } from '../utils/helpers.js';
 import { env } from '../config/env.js';
-import { adjustStock, applyCoupon, computeShipping, computeTotals } from '../services/stock.js';
+import { adjustStock, applyCoupon, computeShipping, computeTotals, computeTax } from '../services/stock.js';
 import { createPayment, verifyPayment } from '../services/payments.js';
 import { sendMail, orderHtml } from '../services/email.js';
 
@@ -257,7 +257,7 @@ router.post('/checkout', optionalAuth, wrap(async (req, res) => {
   }
 
   const shipping = await computeShipping(subtotal, discount);
-  const tax = 0;
+  const tax = await computeTax(subtotal, shipping);
   const grandTotal = Math.round((subtotal - discount + shipping + tax) * 100) / 100;
 
   const orderNumber = await buildOrderNumber(store);

@@ -10,6 +10,8 @@ const num = (v, def) => {
 const cashfreeAppId = process.env.CASHFREE_APP_ID || '';
 const cashfreeSecretKey = process.env.CASHFREE_SECRET_KEY || '';
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID || '';
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
 
 // Detect live mode based on key prefixes
 const cashfreeIsLive = cashfreeAppId.startsWith('PROD_');
@@ -55,6 +57,11 @@ export const env = {
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     isLive: stripeIsLive,
+  },
+  razorpay: {
+    keyId: razorpayKeyId,
+    keySecret: razorpayKeySecret,
+    isLive: razorpayKeyId.startsWith('rzp_live_'),
   },
   paypal: {
     clientId: process.env.PAYPAL_CLIENT_ID || '',

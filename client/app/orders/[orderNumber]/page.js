@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Package, Download, CheckCircle2, Truck, Clock, MapPin, CreditCard } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, API_URL, getToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Img } from '@/components/primitives';
 import { Badge, Button, Spinner } from '@/components/ui';
@@ -27,6 +27,24 @@ export default function OrderTrackingPage({ params }) {
         router.push('/account/orders');
       });
   }, [orderNumber, router, toast]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    const apiUrl = API_URL.replace(/\/api$/, '');
+    const evtSource = new EventSource(`${apiUrl}/api/orders/${orderNumber}/stream?token=${token}`);
+    evtSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'status' || data.type === 'return') {
+          setOrder((prev) => prev ? { ...prev, status: data.status || prev.status } : prev);
+          toast(`Order status updated to ${data.status}`, 'info');
+        }
+      } catch {}
+    };
+    evtSource.onerror = () => {};
+    return () => evtSource.close();
+  }, [orderNumber, toast]);
 
   const downloadInvoice = async () => {
     if (!order?.orderNumber) return;

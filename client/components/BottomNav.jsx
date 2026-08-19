@@ -50,6 +50,7 @@ export function BottomNav() {
         className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-hairline bg-background/80 backdrop-blur-xl safe-bottom lg:hidden"
         role="navigation"
         aria-label="Mobile navigation"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {tabs.map((tab) => {
           const active = pathname === tab.href || (tab.href === '/shop' && pathname.startsWith('/shop'));
@@ -58,22 +59,22 @@ export function BottomNav() {
             <Link
               key={tab.label}
               href={tab.href}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors min-h-[56px] ${
+              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-all duration-200 min-h-[56px] no-select press-effect ${
                 active ? 'text-blue' : 'text-muted active:text-foreground'
               }`}
               aria-label={tab.label}
               aria-current={active ? 'page' : undefined}
             >
-              <span className="relative flex items-center justify-center">
-                <Icon size={21} strokeWidth={active ? 2.2 : 1.7} />
+              <span className="relative flex items-center justify-center transition-transform duration-200" style={{ transform: active ? 'scale(1.1)' : 'scale(1)' }}>
+                <Icon size={22} strokeWidth={active ? 2.4 : 1.7} />
                 {tab.label === 'Cart' && <CartBadge count={tab.badge} />}
                 {tab.label === 'Wishlist' && <WishlistBadge count={tab.badge} />}
               </span>
-              <span className={`text-[10px] leading-none ${active ? 'font-semibold' : 'font-medium'}`}>
+              <span className={`text-[10px] leading-none transition-all duration-200 ${active ? 'font-semibold' : 'font-medium'}`}>
                 {tab.label}
               </span>
               {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-blue" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-8 rounded-full bg-blue anim-scale-in" />
               )}
             </Link>
           );

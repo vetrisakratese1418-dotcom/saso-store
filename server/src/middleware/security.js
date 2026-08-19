@@ -5,7 +5,13 @@ import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss';
 import { env } from '../config/env.js';
 
-const origin = env.clientUrl.split(',').map((s) => s.trim()).filter(Boolean);
+const allowedOrigins = env.clientUrl
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+  .map((u) => {
+    try { return new URL(u).origin; } catch { return u; }
+  });
 
 const securityHeaders = helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -14,12 +20,18 @@ const securityHeaders = helmet({
 
 const corsOptions = {
   origin(origin, cb) {
-    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('vercel')) {
+    if (!origin) return cb(null, true);
+    const isDev = env.nodeEnv !== 'production';
+    if (isDev && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
       return cb(null, true);
     }
-    if (origin && origin.includes(env.clientUrl)) return cb(null, true);
-    if (origin && origin.includes('shopora')) return cb(null, true);
-    return cb(null, true);
+    try {
+      const o = new URL(origin).origin;
+      if (allowedOrigins.includes(o)) return cb(null, true);
+    } catch {
+      /* invalid origin */
+    }
+    return cb(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { CartDrawer } from './CartDrawer';
+import { CurrencySelector } from './CurrencySelector';
 
 function SearchBar({ compact = false }) {
   const [q, setQ] = useState('');
@@ -71,10 +72,10 @@ export function Navbar() {
           {settings.announcement}
         </div>
       )}
-      <header className={`sticky top-0 z-50 border-b border-hairline bg-background/80 backdrop-blur-xl transition-shadow duration-200 ${scrolled ? 'shadow-sm' : ''}`}>
+      <header className={`sticky top-0 z-50 border-b border-hairline bg-background/80 backdrop-blur-xl transition-all duration-300 ${scrolled ? 'shadow-sm' : ''}`}>
         {/* Mobile header - compact with logo centered */}
         <div className="flex items-center justify-between px-4 py-3 lg:hidden">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 press-effect">
             <span className="flex size-8 items-center justify-center rounded-full bg-blue text-white">
               <ShoppingBag size={15} />
             </span>
@@ -87,7 +88,7 @@ export function Navbar() {
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="flex size-10 items-center justify-center rounded-full text-foreground/80 transition active:scale-90"
+              className="flex size-10 items-center justify-center rounded-full text-foreground/80 transition active:scale-90 press-effect"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
@@ -95,7 +96,7 @@ export function Navbar() {
             <button
               onClick={() => setCartOpen(true)}
               aria-label="Open cart"
-              className="relative flex size-10 items-center justify-center rounded-full text-foreground/80 transition active:scale-90"
+              className="relative flex size-10 items-center justify-center rounded-full text-foreground/80 transition active:scale-90 press-effect"
             >
               <ShoppingBag size={19} />
               {cartCount > 0 && (
@@ -136,6 +137,11 @@ export function Navbar() {
 
           <div className="ml-auto flex items-center gap-2">
             <SearchBar />
+
+            <CurrencySelector settings={settings} onCurrencyChange={(c) => {
+              localStorage.setItem('shopora_currency', JSON.stringify(c));
+              window.location.reload();
+            }} />
 
             <button
               onClick={toggleTheme}

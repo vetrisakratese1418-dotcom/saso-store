@@ -1,12 +1,23 @@
+const CURRENCY_LOCALES = {
+  INR: 'en-IN',
+  USD: 'en-US',
+  EUR: 'de-DE',
+  GBP: 'en-GB',
+  AED: 'ar-AE',
+};
+
 export function formatPrice(amount, settings = null) {
   const symbol = settings?.currencySymbol || '₹';
   const currency = settings?.currency || 'INR';
   const num = Number(amount || 0);
+  const locale = CURRENCY_LOCALES[currency] || 'en-US';
   try {
-    return `${symbol}${num.toLocaleString('en-IN', {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
       minimumFractionDigits: num % 1 ? 2 : 0,
       maximumFractionDigits: 2,
-    })}`;
+    }).format(num);
   } catch {
     return `${symbol}${num.toFixed(2)}`;
   }
