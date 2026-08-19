@@ -414,6 +414,13 @@ export async function verifyPayment({ method, orderNumber, amount, reference }) 
 
   if (method === 'razorpay') {
     if (razorpayKeyId && razorpayKeySecret && reference?.razorpayOrderId && reference?.razorpayPaymentId) {
+      if (reference.razorpaySignature) {
+        const body = `${reference.razorpayOrderId}|${reference.razorpayPaymentId}`;
+        const expectedSig = crypto.createHmac('sha256', razorpayKeySecret).update(body).digest('hex');
+        if (!crypto.timingSafeEqual(Buffer.from(expectedSig), Buffer.from(reference.razorpaySignature || ''))) {
+          return { verified: false, reason: 'Razorpay signature verification failed' };
+        }
+      }
       const auth = Buffer.from(`${razorpayKeyId}:${razorpayKeySecret}`).toString('base64');
       const rzRes = await fetch(`https://api.razorpay.com/v1/payments/${reference.razorpayPaymentId}/fetch`, {
         headers: { Authorization: `Basic ${auth}` },
@@ -422,12 +429,12 @@ export async function verifyPayment({ method, orderNumber, amount, reference }) 
       if (rzRes.ok && payment.status === 'captured') {
         return { verified: true, transactionId: payment.id };
       }
-      return { verified: false, reason: 'Razorpay payment not captured' };
+      return { verified: false, reason: `Razorpay payment status: ${payment.status || 'unknown'}` };
     }
-    if (env.allowTestPayments && reference?.razorpayOrderId) {
-      return { verified: true, transactionId: reference.razorpayOrderId };
+    if (env.allowTestPayments && reference?.razorpayOrderId && reference?.razorpayPaymentId) {
+      return { verified: true, transactionId: reference.razorpayPaymentId };
     }
-    return { verified: false, reason: 'Could not verify Razorpay payment' };
+    return { verified: false, reason: 'Could not verify Razorpay payment — missing order or payment ID' };
   }
 
   if (method === 'paypal') {

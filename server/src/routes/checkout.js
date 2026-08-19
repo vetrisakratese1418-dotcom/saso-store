@@ -320,10 +320,11 @@ router.post('/checkout', optionalAuth, wrap(async (req, res) => {
   if (payment.upiLink) patch['payment.upiLink'] = payment.upiLink;
   if (payment.vpa) patch['payment.vpa'] = payment.vpa;
   if (payment.merchantName) patch['payment.merchantName'] = payment.merchantName;
-  if (payment.orderId) patch['payment.paypalOrderId'] = payment.orderId;
+  if (payment.orderId && paymentMethod === 'paypal') patch['payment.paypalOrderId'] = payment.orderId;
   if (payment.paymentIntentId) patch['payment.paymentIntentId'] = payment.paymentIntentId;
   if (payment.cfOrderId) patch['payment.cfOrderId'] = payment.cfOrderId;
   if (payment.paymentSessionId) patch['payment.paymentSessionId'] = payment.paymentSessionId;
+  if (payment.orderId && paymentMethod === 'razorpay') patch['payment.razorpayOrderId'] = payment.orderId;
   if (Object.keys(patch).length) {
     await store.collection('paymentSessions').updateById(session._id, patch);
   }
@@ -461,6 +462,26 @@ router.post('/payments/report', wrap(async (req, res) => {
 
   if (!customerEmail && !orderNumber) throw new AppError('Please provide at least an order number or email');
 
+  let orderDetails = null;
+  if (orderNumber) {
+    const existingOrder = await store.collection('orders').findOne({ orderNumber });
+    if (existingOrder) {
+      orderDetails = {
+        total: existingOrder.totals?.grandTotal || 0,
+        status: existingOrder.status || 'unknown',
+        paymentStatus: existingOrder.payment?.status || 'unknown',
+        items: (existingOrder.items || []).map((it) => ({ name: it.name, qty: it.qty, price: it.price })),
+        createdAt: existingOrder.createdAt || '',
+      };
+    }
+    const session = await store.collection('paymentSessions').findOne({ orderNumber });
+    if (session) {
+      orderDetails = orderDetails || {};
+      orderDetails.sessionStatus = session.status || 'unknown';
+      orderDetails.sessionPaymentMethod = session.paymentMethod || '';
+    }
+  }
+
   const complaint = await store.collection('paymentComplaints').insert({
     orderNumber: orderNumber || '',
     customerName: sanitizeField(customerName, 120),
@@ -470,11 +491,27 @@ router.post('/payments/report', wrap(async (req, res) => {
     paymentTime: paymentTime || new Date().toISOString(),
     errorDetails: errorDetails || '',
     description: sanitizeField(description, 2000),
+    orderDetails,
     status: 'open',
     adminNote: '',
   });
 
   console.log(`[payment-complaint] New complaint from ${customerEmail || 'unknown'} for order ${orderNumber || 'N/A'}: ${errorDetails || description}`);
+
+  sendMail({
+    to: env.adminEmail || env.storeEmail || '',
+    subject: `[Payment Complaint] Order ${orderNumber || 'N/A'}`,
+    html: `<div style="font-family:sans-serif;padding:20px;">
+      <h2>Payment Complaint Received</h2>
+      <p><strong>Order:</strong> ${orderNumber || 'N/A'}</p>
+      <p><strong>Customer:</strong> ${customerName || 'N/A'} (${customerEmail || 'N/A'})</p>
+      <p><strong>Payment Method:</strong> ${paymentMethod || 'N/A'}</p>
+      <p><strong>Transaction ID:</strong> ${transactionId || 'N/A'}</p>
+      ${orderDetails ? `<p><strong>Order Total:</strong> ₹${orderDetails.total || 0}</p><p><strong>Order Status:</strong> ${orderDetails.status}</p>` : ''}
+      <p><strong>Error:</strong> ${errorDetails || 'N/A'}</p>
+      <p><strong>Description:</strong> ${description || 'N/A'}</p>
+    </div>`,
+  }).catch(() => {});
 
   res.json({ ok: true, complaintId: complaint._id || complaint.orderNumber });
 }));

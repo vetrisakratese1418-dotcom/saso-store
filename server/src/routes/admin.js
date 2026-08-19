@@ -610,6 +610,37 @@ function splitCsvLine(line) {
   return out;
 }
 
+/* ---------------- Payment Complaints ---------------- */
+
+router.get('/complaints', wrap(async (req, res) => {
+  const store = await getStore();
+  const { status, page = 1, limit = 20 } = req.query;
+  const filter = {};
+  if (status && status !== 'all') filter.status = status;
+  const pg = Math.max(1, parseInt(page) || 1);
+  const lim = Math.min(100, parseInt(limit) || 20);
+  const [total, items] = await Promise.all([
+    store.collection('paymentComplaints').count(filter),
+    store.collection('paymentComplaints').find(filter, { sort: { createdAt: -1 }, skip: (pg - 1) * lim, limit: lim }),
+  ]);
+  res.json({ items, pagination: { page: pg, limit: lim, total, pages: Math.ceil(total / lim) } });
+}));
+
+router.patch('/complaints/:id', wrap(async (req, res) => {
+  const store = await getStore();
+  const complaint = await store.collection('paymentComplaints').findById(req.params.id);
+  if (!complaint) throw new AppError('Complaint not found', 404);
+  const patch = {};
+  if (req.body.status !== undefined) {
+    const allowed = ['open', 'investigating', 'resolved', 'dismissed'];
+    if (!allowed.includes(req.body.status)) throw new AppError('Invalid status');
+    patch.status = req.body.status;
+  }
+  if (req.body.adminNote !== undefined) patch.adminNote = sanitizeField(req.body.adminNote, 2000);
+  const updated = await store.collection('paymentComplaints').updateById(complaint._id, patch);
+  res.json(updated);
+}));
+
 /* ---------------- Newsletter ---------------- */
 
 router.get('/newsletter', wrap(async (req, res) => {

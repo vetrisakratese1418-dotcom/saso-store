@@ -1,6 +1,3 @@
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -14,12 +11,12 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  outputFileTracingRoot: path.join(path.dirname(fileURLToPath(import.meta.url)), '..'),
+  serverExternalPackages: ['qrcode'],
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:4000/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/:path*`,
       },
     ];
   },

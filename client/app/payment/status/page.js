@@ -9,7 +9,7 @@ import { Img } from '@/components/primitives';
 import { Button, Spinner } from '@/components/ui';
 import { formatPrice, formatDateTime } from '@/lib/format';
 
-function ReportPaymentIssue({ orderNumber, paymentMethod }) {
+function ReportPaymentIssue({ orderNumber, paymentMethod, session, order }) {
   const { toast } = useStore();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -24,7 +24,11 @@ function ReportPaymentIssue({ orderNumber, paymentMethod }) {
         method: 'POST',
         body: {
           orderNumber: orderNumber || '',
-          paymentMethod: paymentMethod || '',
+          customerName: order?.shippingAddress?.name || session?.shippingAddress?.name || '',
+          customerEmail: order?.shippingAddress?.email || order?.customerEmail || session?.shippingAddress?.email || session?.customerEmail || '',
+          paymentMethod: paymentMethod || order?.payment?.method || session?.paymentMethod || '',
+          transactionId: order?.payment?.transactionId || '',
+          paymentTime: order?.payment?.paidAt || new Date().toISOString(),
           errorDetails: 'Customer reported payment issue from status page',
           description: desc,
         },
@@ -323,7 +327,7 @@ function PaymentStatusInner() {
           </Button>
           <Button variant="outline" onClick={() => router.push('/shop')}>Continue shopping</Button>
         </div>
-        <ReportPaymentIssue orderNumber={orderNumber} paymentMethod={session?.paymentMethod} />
+        <ReportPaymentIssue orderNumber={orderNumber} paymentMethod={session?.paymentMethod} session={session} order={order} />
       </div>
     </div>
   );

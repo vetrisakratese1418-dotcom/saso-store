@@ -78,7 +78,7 @@ function UpiAutoRedirect({ orderNumber, testMode }) {
 }
 
 function ReportPaymentIssueInline({ paymentMethod, description }) {
-  const { toast } = useStore();
+  const { toast, user } = useStore();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [desc, setDesc] = useState(description || '');
@@ -90,7 +90,13 @@ function ReportPaymentIssueInline({ paymentMethod, description }) {
     try {
       await api('/payments/report', {
         method: 'POST',
-        body: { paymentMethod, errorDetails: 'Payment failed at checkout', description: desc },
+        body: {
+          customerName: user?.name || '',
+          customerEmail: user?.email || '',
+          paymentMethod,
+          errorDetails: 'Payment failed at checkout',
+          description: desc,
+        },
       });
       setSent(true);
       toast('Report submitted. We will investigate.', 'success');
@@ -308,14 +314,15 @@ function CheckoutInner() {
 
   const stripeFlow = async (session, payment, methodId) => {
     const ok = await loadScript('https://js.stripe.com/v3/');
-    if (!ok) throw new Error('Could not load Stripe');
+    if (!ok) throw new Error('Could not load Stripe. Please check your connection.');
+    if (!payment.publishableKey) throw new Error('Stripe is not properly configured. Please contact support.');
     const stripe = window.Stripe(payment.publishableKey);
     const elements = stripe.elements();
     const card = elements.create('card', { style: { base: { fontSize: '16px', color: '#1d1d1f' } } });
     const mountEl = document.createElement('div');
     document.getElementById('stripe-mount').replaceChildren(mountEl);
     card.mount(mountEl);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       window.__stripeConfirm = async () => {
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
@@ -323,14 +330,17 @@ function CheckoutInner() {
           redirect: 'if_required',
         });
         if (error) {
-          toast(error.message, 'error');
-          resolve(null);
+          reject(new Error(error.message || 'Card payment failed'));
         } else if (paymentIntent) {
-          const res = await api('/payments/verify', {
-            method: 'POST',
-            body: { orderNumber: session.orderNumber, paymentMethod: methodId, reference: { paymentIntentId: paymentIntent.id } },
-          });
-          resolve(res);
+          try {
+            const res = await api('/payments/verify', {
+              method: 'POST',
+              body: { orderNumber: session.orderNumber, paymentMethod: methodId, reference: { paymentIntentId: paymentIntent.id } },
+            });
+            resolve(res);
+          } catch (err) {
+            reject(new Error(err.message || 'Payment verification failed'));
+          }
         }
       };
     });
@@ -403,23 +413,29 @@ function CheckoutInner() {
 
       if (payment?.provider === 'cashfree') {
         const vr = await cashfreeFlow(session, payment, paymentMethod);
-        if (vr?.order) {
+        if (vr?.verified && vr?.order) {
           clearCart();
           setOrder(vr.order);
           toast('Payment successful!', 'success');
+        } else if (vr?.verified) {
+          setOrder(vr.order || { ...session, status: 'processing' });
+          toast('Payment received! Processing your order.', 'success');
         } else {
-          setOrder(session);
+          throw new Error('Payment could not be verified. Please check your order status.');
         }
         return;
       }
       if (payment?.provider === 'stripe') {
         const vr = await stripeFlow(session, payment, paymentMethod);
-        if (vr) {
+        if (vr?.verified && vr?.order) {
           clearCart();
           setOrder(vr.order);
           toast('Payment successful!', 'success');
+        } else if (vr?.verified) {
+          setOrder(vr.order || { ...session, status: 'processing' });
+          toast('Payment received! Processing your order.', 'success');
         } else {
-          setOrder(session);
+          throw new Error('Payment could not be verified. Please check your order status.');
         }
         return;
       }
@@ -431,8 +447,8 @@ function CheckoutInner() {
       if (payment?.provider === 'razorpay') {
         const razorpayFlow = async (session, payment) => {
           const ok = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
-          if (!ok) throw new Error('Could not load Razorpay checkout');
-          const curSymbol = CURRENCY_SYMBOLS[session?.totals?.currency || 'INR'] || '₹';
+          if (!ok) throw new Error('Could not load Razorpay checkout. Please check your connection.');
+          if (!payment.keyId) throw new Error('Razorpay is not properly configured. Please contact support.');
           return new Promise((resolve, reject) => {
             const rz = new window.Razorpay({
               key: payment.keyId,
@@ -456,27 +472,30 @@ function CheckoutInner() {
                     },
                   });
                   if (vr?.verified) resolve(vr);
-                  else reject(new Error('Payment verification failed'));
+                  else reject(new Error(vr?.message || 'Payment verification failed. No money was charged.'));
                 } catch (err) {
-                  reject(err);
+                  reject(new Error(err.message || 'Payment verification failed. No money was charged.'));
                 }
               },
               prefill: { name: addr.name, email: addr.email, contact: addr.phone },
               theme: { color: '#0071e3' },
             });
             rz.on('payment.failed', (response) => {
-              reject(new Error(response.error?.description || 'Payment failed'));
+              reject(new Error(response.error?.description || 'Payment failed. No money was charged.'));
             });
             rz.open();
           });
         };
         const vr = await razorpayFlow(session, payment);
-        if (vr?.order) {
+        if (vr?.verified && vr?.order) {
           clearCart();
           setOrder(vr.order);
           toast('Payment successful!', 'success');
+        } else if (vr?.verified) {
+          setOrder(vr.order || { ...session, status: 'processing' });
+          toast('Payment received! Processing your order.', 'success');
         } else {
-          setOrder(session);
+          throw new Error('Payment could not be verified. Please check your order status.');
         }
         return;
       }
