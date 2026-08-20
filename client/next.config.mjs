@@ -1,5 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-const API_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+const API_ORIGIN = API_URL.startsWith('/') ? 'http://localhost:4000' : API_URL.replace(/\/api\/?$/, '');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -16,6 +16,10 @@ const nextConfig = {
   serverExternalPackages: ['qrcode'],
   async rewrites() {
     return [
+      {
+        source: '/uploads/:path*',
+        destination: `${API_ORIGIN}/uploads/:path*`,
+      },
       {
         source: '/api/:path*',
         destination: `${API_ORIGIN}/api/:path*`,

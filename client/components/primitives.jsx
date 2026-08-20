@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { API_URL } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
 
 const PLACEHOLDER =
@@ -12,7 +11,7 @@ const PLACEHOLDER =
 
 export function Img({ src, alt = '', className = '', rounded = 'rounded-2xl', sizes = '500px', loading = 'lazy' }) {
   const [errored, setErrored] = useState(false);
-  const resolved = src && src.startsWith('/uploads') ? `${API_URL.replace(/\/api$/, '')}${src}` : src;
+  const resolved = src && src.startsWith('/uploads') ? src : src;
   return (
     <img
       src={errored || !resolved ? PLACEHOLDER : resolved}
