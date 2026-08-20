@@ -3,7 +3,6 @@ import { getStore } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errors.js';
 import { sanitizeField } from '../utils/helpers.js';
-import { adjustStock } from '../services/stock.js';
 
 const router = Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';

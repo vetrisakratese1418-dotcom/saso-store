@@ -1,7 +1,7 @@
 'use client';
 
 import { useStore } from '@/lib/store';
-import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle2, Info, AlertTriangle } from 'lucide-react';
 
 export function Toasts() {
   const { toasts } = useStore();

@@ -1,5 +1,7 @@
 'use client';
 
+import { formatPrice } from '@/lib/format';
+
 export function MiniBarChart({ data, height = 120 }) {
   if (!data?.length) return <p className="py-8 text-center text-sm text-muted">No data yet</p>;
   const max = Math.max(...data.map((d) => d.sales), 1);
@@ -58,14 +60,14 @@ export function DonutChart({ data }) {
             );
           })}
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">₹{Math.round(total)}</span>
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">{formatPrice(Math.round(total))}</span>
       </div>
       <ul className="min-w-0 flex-1 space-y-1.5">
         {entries.slice(0, 6).map(([k, v], i) => (
           <li key={k} className="flex items-center gap-2 text-sm">
             <span className="size-2.5 shrink-0 rounded-full" style={{ background: colors[i % colors.length] }} />
             <span className="min-w-0 flex-1 truncate text-muted">{k}</span>
-            <span className="font-medium">₹{Math.round(v)}</span>
+            <span className="font-medium">{formatPrice(Math.round(v))}</span>
           </li>
         ))}
       </ul>

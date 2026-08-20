@@ -79,15 +79,15 @@ export function StoreProvider({ children }) {
     });
   };
 
-  const persistCart = (next) => {
+  const persistCart = useCallback((next) => {
     setCart(next);
     if (typeof window !== 'undefined') localStorage.setItem(CART_KEY, JSON.stringify(next));
-  };
+  }, []);
 
-  const persistWishlist = (next) => {
+  const persistWishlist = useCallback((next) => {
     setWishlist(next);
     if (typeof window !== 'undefined') localStorage.setItem(WISH_KEY, JSON.stringify(next));
-  };
+  }, []);
 
   const toast = useCallback((message, type = 'info') => {
     const id = ++toastId.current;
@@ -251,7 +251,7 @@ export function StoreProvider({ children }) {
     [
       user, booted, login, register, logout, updateUser, refreshUser, cart, cartCount, cartSubtotal,
       addToCart, updateQty, removeFromCart, clearCart, wishlist, toggleWishlist, isWishlisted,
-      theme, toggleTheme, settings, currency, toast, toasts,
+      theme, toggleTheme, settings, toast, toasts,
     ],
   );
 

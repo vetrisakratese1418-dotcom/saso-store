@@ -13,10 +13,10 @@ async function main() {
     console.log(`  Storage: ${store.isMongo ? 'MongoDB' : 'Local JSON database'}\n`);
   });
 
-  const dailyCheck = async () => {
+  const checkLowStock = async () => {
     const low = await lowStockProducts();
     if (low.length) {
-      const adminEmails = env.storeEmail;
+      const adminEmails = env.adminEmail;
       await sendMail({
         to: adminEmails,
         subject: `Low stock alert: ${low.length} product(s) need attention`,
@@ -26,8 +26,8 @@ async function main() {
     }
   };
 
-  const timer = setInterval(dailyCheck, 6 * 60 * 60 * 1000);
-  dailyCheck().catch(() => {});
+  const timer = setInterval(checkLowStock, 6 * 60 * 60 * 1000);
+  checkLowStock().catch((err) => console.error('[alert] Low stock check failed:', err.message));
 
   const shutdown = async () => {
     clearInterval(timer);

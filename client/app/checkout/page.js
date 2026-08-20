@@ -194,7 +194,7 @@ function CheckoutSuccess({ order, router }) {
 function CheckoutInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { cart, cartSubtotal, user, settings, toast, clearCart, updateQty, removeFromCart } = useStore();
+  const { cart, cartSubtotal, user, settings, toast, clearCart } = useStore();
 
   const [methods, setMethods] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');

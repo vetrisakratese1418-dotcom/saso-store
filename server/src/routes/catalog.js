@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { getStore } from '../db/index.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errors.js';
-import { makeSlug, uniqueSlug, sanitizeField } from '../utils/helpers.js';
+import { makeSlug, sanitizeField } from '../utils/helpers.js';
 import { validEmail, parseNum } from '../utils/validators.js';
 import { env } from '../config/env.js';
 import { availableMethods } from '../services/payments.js';

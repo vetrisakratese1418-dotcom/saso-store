@@ -5,10 +5,10 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Button, Input, Badge, Spinner, Modal, EmptyState } from '@/components/ui';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatPrice } from '@/lib/format';
 
 export default function AdminCoupons() {
-  const { toast } = useStore();
+  const { toast, settings } = useStore();
   const [items, setItems] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -114,8 +114,8 @@ export default function AdminCoupons() {
                   )}
                 </div>
                 <p className="mt-3 text-2xl font-semibold">
-                  {c.type === 'percent' ? `${c.value}%` : `₹${c.value}`}
-                  {c.minOrder > 0 && <span className="text-sm font-normal text-muted"> min ₹{c.minOrder}</span>}
+                  {c.type === 'percent' ? `${c.value}%` : formatPrice(c.value, settings)}
+                  {c.minOrder > 0 && <span className="text-sm font-normal text-muted"> min {formatPrice(c.minOrder, settings)}</span>}
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   Used {c.usedCount}{c.usageLimit ? ` / ${c.usageLimit}` : ''} times
@@ -139,11 +139,11 @@ export default function AdminCoupons() {
             <span className="mb-1.5 block text-[13px] font-medium text-muted">Type</span>
             <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full rounded-xl border border-hairline bg-card px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40">
               <option value="percent">Percentage (%)</option>
-              <option value="fixed">Fixed (₹)</option>
+              <option value="fixed">Fixed</option>
             </select>
           </label>
-          <Input label="Min order (₹)" type="number" value={form.minOrder} onChange={(e) => setForm({ ...form, minOrder: e.target.value })} />
-          <Input label="Max discount (₹, optional)" type="number" value={form.maxDiscount} onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })} />
+          <Input label="Min order" type="number" value={form.minOrder} onChange={(e) => setForm({ ...form, minOrder: e.target.value })} />
+          <Input label="Max discount (optional)" type="number" value={form.maxDiscount} onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })} />
           <Input label="Usage limit (optional)" type="number" value={form.usageLimit} onChange={(e) => setForm({ ...form, usageLimit: e.target.value })} />
           <Input label="Starts (optional)" type="date" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
           <Input label="Expires (optional)" type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} />

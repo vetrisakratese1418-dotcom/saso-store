@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { ProductForm } from '@/components/admin/ProductForm';
 import { Button, Input, Spinner } from '@/components/ui';
-import { formatPrice, formatDateTime } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 
 export default function EditProductPage({ params }) {
   const { id } = use(params);

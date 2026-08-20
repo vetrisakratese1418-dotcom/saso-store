@@ -5,8 +5,6 @@ import { BottomNav } from '@/components/BottomNav';
 import { Toasts } from '@/components/Toasts';
 import './globals.css';
 
-export const dynamic = 'force-dynamic';
-
 export const metadata = {
   title: {
     default: 'saso — Premium Online Store',

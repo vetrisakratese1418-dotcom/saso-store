@@ -10,6 +10,7 @@ import { sendMail, orderHtml } from '../services/email.js';
 
 const router = Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const SESSION_TTL_MS = 1000 * 60 * 5;
 
@@ -329,14 +330,24 @@ router.post('/checkout', optionalAuth, wrap(async (req, res) => {
     await store.collection('paymentSessions').updateById(session._id, patch);
   }
 
-  const updatedSession = {
-    ...session,
-    payment: { ...session.payment, ...patch },
-  };
+  const updatedPayment = { ...session.payment, method: paymentMethod, status: 'pending' };
+  if (payment.testRef) updatedPayment.testRef = payment.testRef;
+  if (payment.upiLink) updatedPayment.upiLink = payment.upiLink;
+  if (payment.vpa) updatedPayment.vpa = payment.vpa;
+  if (payment.merchantName) updatedPayment.merchantName = payment.merchantName;
+  if (payment.orderId && paymentMethod === 'paypal') updatedPayment.paypalOrderId = payment.orderId;
+  if (payment.paymentIntentId) updatedPayment.paymentIntentId = payment.paymentIntentId;
+  if (payment.cfOrderId) updatedPayment.cfOrderId = payment.cfOrderId;
+  if (payment.paymentSessionId) updatedPayment.paymentSessionId = payment.paymentSessionId;
+  if (payment.orderId && paymentMethod === 'razorpay') updatedPayment.razorpayOrderId = payment.orderId;
+  if (payment.keyId) updatedPayment.keyId = payment.keyId;
+  if (payment.amount) updatedPayment.amount = payment.amount;
+  if (payment.currency) updatedPayment.currency = payment.currency;
+  const updatedSession = { ...session, payment: updatedPayment };
   res.status(201).json({ session: sessionPublic(updatedSession), payment });
 }));
 
-router.post('/payments/verify', wrap(async (req, res) => {
+router.post('/payments/verify', optionalAuth, wrap(async (req, res) => {
   const store = await getStore();
   const { orderNumber, paymentMethod, reference } = req.body;
   if (!orderNumber || !paymentMethod) throw new AppError('Missing payment details');
@@ -386,7 +397,7 @@ router.post('/payments/verify', wrap(async (req, res) => {
   });
 }));
 
-router.post('/payments/cancel', wrap(async (req, res) => {
+router.post('/payments/cancel', optionalAuth, wrap(async (req, res) => {
   const store = await getStore();
   const { orderNumber } = req.body;
   if (!orderNumber) throw new AppError('Missing order number');
@@ -435,17 +446,23 @@ router.get('/orders/my', requireAuth, wrap(async (req, res) => {
   res.json(orders.map(publicOrder));
 }));
 
-router.get('/orders/:orderNumber', wrap(async (req, res) => {
+router.get('/orders/:orderNumber', optionalAuth, wrap(async (req, res) => {
   const store = await getStore();
   const order = await store.collection('orders').findOne({ orderNumber: req.params.orderNumber });
   if (!order) throw new AppError('Order not found', 404);
+  if (order.userId && req.userId && order.userId !== req.userId && req.user?.role !== 'admin') {
+    throw new AppError('Not authorized', 403);
+  }
   res.json(publicOrder(order));
 }));
 
-router.get('/orders/:orderNumber/invoice', wrap(async (req, res) => {
+router.get('/orders/:orderNumber/invoice', optionalAuth, wrap(async (req, res) => {
   const store = await getStore();
   const order = await store.collection('orders').findOne({ orderNumber: req.params.orderNumber });
   if (!order) throw new AppError('Order not found', 404);
+  if (order.userId && req.userId && order.userId !== req.userId && req.user?.role !== 'admin') {
+    throw new AppError('Not authorized', 403);
+  }
 
   const { renderInvoice } = await import('../services/invoice.js');
   res.type('html').send(renderInvoice(order));
@@ -456,7 +473,7 @@ router.get('/payments/methods', wrap(async (req, res) => {
   res.json(availableMethods());
 }));
 
-router.post('/payments/report', wrap(async (req, res) => {
+router.post('/payments/report', optionalAuth, wrap(async (req, res) => {
   const store = await getStore();
   const { orderNumber, customerName, customerEmail, paymentMethod, transactionId, paymentTime, errorDetails, description } = req.body;
 
@@ -503,13 +520,13 @@ router.post('/payments/report', wrap(async (req, res) => {
     subject: `[Payment Complaint] Order ${orderNumber || 'N/A'}`,
     html: `<div style="font-family:sans-serif;padding:20px;">
       <h2>Payment Complaint Received</h2>
-      <p><strong>Order:</strong> ${orderNumber || 'N/A'}</p>
-      <p><strong>Customer:</strong> ${customerName || 'N/A'} (${customerEmail || 'N/A'})</p>
-      <p><strong>Payment Method:</strong> ${paymentMethod || 'N/A'}</p>
-      <p><strong>Transaction ID:</strong> ${transactionId || 'N/A'}</p>
-      ${orderDetails ? `<p><strong>Order Total:</strong> ₹${orderDetails.total || 0}</p><p><strong>Order Status:</strong> ${orderDetails.status}</p>` : ''}
-      <p><strong>Error:</strong> ${errorDetails || 'N/A'}</p>
-      <p><strong>Description:</strong> ${description || 'N/A'}</p>
+      <p><strong>Order:</strong> ${escHtml(orderNumber || 'N/A')}</p>
+      <p><strong>Customer:</strong> ${escHtml(customerName || 'N/A')} (${escHtml(customerEmail || 'N/A')})</p>
+      <p><strong>Payment Method:</strong> ${escHtml(paymentMethod || 'N/A')}</p>
+      <p><strong>Transaction ID:</strong> ${escHtml(transactionId || 'N/A')}</p>
+      ${orderDetails ? `<p><strong>Order Total:</strong> ${env.currencySymbol || '₹'}${Number(orderDetails.total || 0)}</p><p><strong>Order Status:</strong> ${escHtml(orderDetails.status)}</p>` : ''}
+      <p><strong>Error:</strong> ${escHtml(errorDetails || 'N/A')}</p>
+      <p><strong>Description:</strong> ${escHtml(description || 'N/A')}</p>
     </div>`,
   }).catch(() => {});
 

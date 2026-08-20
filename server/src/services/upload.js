@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AppError } from '../middleware/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const uploadsDir = path.join(__dirname, '..', 'uploads');
+export const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });

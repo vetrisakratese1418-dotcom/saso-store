@@ -314,14 +314,16 @@ router.get('/orders', wrap(async (req, res) => {
 
 router.get('/orders/:id', wrap(async (req, res) => {
   const store = await getStore();
-  const order = await store.collection('orders').findById(req.params.id);
+  const order = await store.collection('orders').findOne({ orderNumber: req.params.id }) ||
+                await store.collection('orders').findById(req.params.id);
   if (!order) throw new AppError('Order not found', 404);
   res.json(order);
 }));
 
 router.patch('/orders/:id/status', wrap(async (req, res) => {
   const store = await getStore();
-  const order = await store.collection('orders').findById(req.params.id);
+  const order = await store.collection('orders').findOne({ orderNumber: req.params.id }) ||
+                await store.collection('orders').findById(req.params.id);
   if (!order) throw new AppError('Order not found', 404);
   const status = sanitizeField(req.body.status, 30);
   const allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -698,6 +700,52 @@ router.put('/settings', wrap(async (req, res) => {
   const out = {};
   for (const s of items) out[s.key] = s.value;
   res.json(out);
+}));
+
+/* ---------------- Returns ---------------- */
+
+router.get('/returns', wrap(async (req, res) => {
+  const store = await getStore();
+  const requests = await store.collection('returnRequests').find({}, { sort: { createdAt: -1 } });
+  res.json(requests);
+}));
+
+router.patch('/returns/:id', wrap(async (req, res) => {
+  const store = await getStore();
+  const { status, adminNote } = req.body;
+  const validStatuses = ['pending', 'approved', 'rejected', 'refunded', 'completed'];
+  if (!validStatuses.includes(status)) throw new AppError('Invalid status');
+
+  const returnReq = await store.collection('returnRequests').findById(req.params.id);
+  if (!returnReq) throw new AppError('Return request not found', 404);
+
+  const patch = { status, adminNote: adminNote || returnReq.adminNote };
+
+  if (status === 'refunded' || status === 'completed') {
+    for (const item of returnReq.items || []) {
+      await adjustStock({
+        productId: item.productId,
+        change: item.qty,
+        reason: 'return',
+        reference: `return-${returnReq.orderNumber}`,
+        by: req.user.email || 'admin',
+      });
+    }
+  }
+
+  await store.collection('returnRequests').updateById(returnReq._id, patch);
+
+  const order = await store.collection('orders').findOne({ orderNumber: returnReq.orderNumber });
+  if (order) {
+    await store.collection('orders').updateById(order._id, { returnRequest: patch });
+  }
+
+  try {
+    const { broadcastOrderUpdate } = await import('./sse.js');
+    broadcastOrderUpdate(returnReq.orderNumber, { type: 'return', status, orderNumber: returnReq.orderNumber });
+  } catch {}
+
+  res.json({ ok: true, returnRequest: { ...returnReq, ...patch } });
 }));
 
 export default router;

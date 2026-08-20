@@ -18,7 +18,6 @@ import adminRoutes from './routes/admin.js';
 import userRoutes from './routes/user.js';
 import sseRoutes from './routes/sse.js';
 import { verifyCashfreeWebhook, verifyStripeWebhook, verifyUpiWebhook } from './services/payments.js';
-import { getStore } from './db/index.js';
 
 export function createApp() {
   const app = express();

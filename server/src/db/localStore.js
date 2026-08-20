@@ -19,6 +19,11 @@ const COLLECTIONS = [
   'settings',
   'paymentSessions',
   'paymentComplaints',
+  'wishlists',
+  'carts',
+  'passwordResetTokens',
+  'emailVerifications',
+  'returnRequests',
 ];
 
 const DEFAULT_SYSTEM_SETTINGS = [
@@ -85,7 +90,8 @@ class LocalCollection {
   async updateById(id, patch) {
     const row = this.db.data[this.name]?.find((d) => d._id === id);
     if (!row) return null;
-    Object.assign(row, patch, { updatedAt: new Date().toISOString() });
+    applyDotNotationPatch(row, patch);
+    row.updatedAt = new Date().toISOString();
     this._save();
     return { ...row };
   }
@@ -93,7 +99,8 @@ class LocalCollection {
   async update(query, patch) {
     const row = this.db.data[this.name]?.find((d) => matches(d, query));
     if (!row) return { matched: 0, modified: 0, doc: null };
-    Object.assign(row, patch, { updatedAt: new Date().toISOString() });
+    applyDotNotationPatch(row, patch);
+    row.updatedAt = new Date().toISOString();
     this._save();
     return { matched: 1, modified: 1, doc: { ...row } };
   }
@@ -243,6 +250,24 @@ function applySort(rows, sort) {
     }
     return 0;
   });
+}
+
+function applyDotNotationPatch(target, patch) {
+  for (const [key, value] of Object.entries(patch)) {
+    if (key.includes('.')) {
+      const parts = key.split('.');
+      let obj = target;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (obj[parts[i]] == null || typeof obj[parts[i]] !== 'object') {
+          obj[parts[i]] = {};
+        }
+        obj = obj[parts[i]];
+      }
+      obj[parts[parts.length - 1]] = value;
+    } else {
+      target[key] = value;
+    }
+  }
 }
 
 class LocalStore {

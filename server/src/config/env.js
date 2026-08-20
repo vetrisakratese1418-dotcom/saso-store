@@ -20,7 +20,9 @@ const stripeIsLive = stripeSecretKey.startsWith('sk_live_');
 export const env = {
   port: num(process.env.PORT, 4000),
   nodeEnv: process.env.NODE_ENV || 'development',
-  jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
+  jwtSecret: process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
+    ? (() => { throw new Error('JWT_SECRET is required in production'); })()
+    : 'dev-secret-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   jwtAdminExpiresIn: process.env.JWT_ADMIN_EXPIRES_IN || '12h',
 
@@ -75,13 +77,13 @@ export const env = {
     enabled: process.env.UPI_ENABLED !== 'false',
   },
 
-  allowTestPayments: process.env.ALLOW_TEST_PAYMENTS !== 'false',
+  allowTestPayments: process.env.ALLOW_TEST_PAYMENTS === 'true',
 
   freeShippingThreshold: num(process.env.FREE_SHIPPING_THRESHOLD, 499),
   shippingFee: num(process.env.SHIPPING_FEE, 49),
 
   adminEmail: process.env.ADMIN_EMAIL || 'admin@shopora.com',
-  adminPassword: process.env.ADMIN_PASSWORD || 'Admin@12345',
+  adminPassword: process.env.ADMIN_PASSWORD || '',
 
   gaId: process.env.NEXT_PUBLIC_GA_ID || '',
 };

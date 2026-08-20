@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { Suspense, useEffect, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Package, Download, CheckCircle2, Truck, Clock, MapPin, CreditCard } from 'lucide-react';
 import { api, API_URL, getToken } from '@/lib/api';
@@ -11,7 +11,7 @@ import { formatPrice, formatDateTime, STATUS_COLORS, STATUS_LABELS } from '@/lib
 
 const FLOW = ['created', 'paid', 'processing', 'shipped', 'delivered'];
 
-export default function OrderTrackingPage({ params }) {
+function OrderTrackingInner({ params }) {
   const { orderNumber } = use(params);
   const searchParams = useSearchParams();
   const justPlaced = searchParams.get('justPlaced') === '1';
@@ -243,5 +243,13 @@ export default function OrderTrackingPage({ params }) {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function OrderTrackingPage({ params }) {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-40"><Spinner className="size-8 text-blue" /></div>}>
+      <OrderTrackingInner params={params} />
+    </Suspense>
   );
 }

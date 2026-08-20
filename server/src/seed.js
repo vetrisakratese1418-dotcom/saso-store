@@ -80,6 +80,11 @@ async function seed() {
 
   console.log('[seed] Seeding database...');
 
+  if (!env.adminPassword) {
+    console.error('[seed] ADMIN_PASSWORD environment variable is required');
+    process.exit(1);
+  }
+
   const adminExists = await store.collection('users').findOne({ email: env.adminEmail });
   if (!adminExists) {
     await store.collection('users').insert({
@@ -90,7 +95,7 @@ async function seed() {
       isActive: true,
       address: {},
     });
-    console.log(`[seed] Admin created: ${env.adminEmail} / ${env.adminPassword}`);
+    console.log(`[seed] Admin created: ${env.adminEmail}`);
   }
 
   for (const c of CATEGORIES) {

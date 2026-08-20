@@ -259,6 +259,7 @@ const PaymentComplaintSchema = new Schema(
     paymentTime: { type: Date, default: null },
     errorDetails: { type: String, default: '' },
     description: { type: String, default: '' },
+    orderDetails: { type: Schema.Types.Mixed, default: null },
     status: { type: String, enum: ['open', 'investigating', 'resolved', 'dismissed'], default: 'open' },
     adminNote: { type: String, default: '' },
   },

@@ -330,6 +330,9 @@ export async function createPayment({ method, amount, orderNumber, currency = en
       }
       throw new Error('PayPal is not configured. Please add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to your .env file.');
     }
+    if (currency === 'INR') {
+      throw new Error('PayPal does not support INR. Please choose a different payment method.');
+    }
     const token = await paypalToken();
     const res = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
       method: 'POST',
@@ -339,7 +342,7 @@ export async function createPayment({ method, amount, orderNumber, currency = en
         purchase_units: [
           {
             reference_id: orderNumber,
-            amount: { currency_code: currency === 'INR' ? 'USD' : currency, value: amt.toFixed(2) },
+            amount: { currency_code: currency, value: amt.toFixed(2) },
           },
         ],
         application_context: {
@@ -417,7 +420,9 @@ export async function verifyPayment({ method, orderNumber, amount, reference }) 
       if (reference.razorpaySignature) {
         const body = `${reference.razorpayOrderId}|${reference.razorpayPaymentId}`;
         const expectedSig = crypto.createHmac('sha256', razorpayKeySecret).update(body).digest('hex');
-        if (!crypto.timingSafeEqual(Buffer.from(expectedSig), Buffer.from(reference.razorpaySignature || ''))) {
+        const actualSig = reference.razorpaySignature;
+        if (expectedSig.length !== actualSig.length ||
+            !crypto.timingSafeEqual(Buffer.from(expectedSig), Buffer.from(actualSig))) {
           return { verified: false, reason: 'Razorpay signature verification failed' };
         }
       }
