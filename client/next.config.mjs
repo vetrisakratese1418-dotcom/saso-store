@@ -1,3 +1,6 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -6,7 +9,6 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**.pexels.com' },
       { protocol: 'https', hostname: '**.loremflickr.com' },
-      { protocol: 'http', hostname: 'localhost' },
     ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -16,7 +18,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/:path*`,
+        destination: `${API_ORIGIN}/api/:path*`,
       },
     ];
   },

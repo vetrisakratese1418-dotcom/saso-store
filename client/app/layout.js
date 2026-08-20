@@ -5,6 +5,8 @@ import { BottomNav } from '@/components/BottomNav';
 import { Toasts } from '@/components/Toasts';
 import './globals.css';
 
+export const metadataBase = new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+
 export const metadata = {
   title: {
     default: 'saso — Premium Online Store',

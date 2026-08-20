@@ -49,7 +49,7 @@ export default function HomePage() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-32 px-4 text-center">
         <p className="text-muted">{error}</p>
-        <p className="text-sm text-muted">Make sure the API server is running at http://localhost:4000</p>
+        <p className="text-sm text-muted">Please try again later or contact support if this persists.</p>
       </div>
     );
   }

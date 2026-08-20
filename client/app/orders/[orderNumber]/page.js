@@ -48,7 +48,7 @@ function OrderTrackingInner({ params }) {
 
   const downloadInvoice = async () => {
     if (!order?.orderNumber) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+    const apiUrl = API_URL;
     try {
       const res = await fetch(`${apiUrl}/orders/${order.orderNumber}/invoice`);
       const html = await res.text();
