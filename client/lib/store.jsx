@@ -135,7 +135,6 @@ export function StoreProvider({ children }) {
   const addToCart = useCallback(
     (product, qty = 1) => {
       const q = Math.max(1, parseInt(qty) || 1);
-      let added = false;
       setCart((prev) => {
         const found = prev.find((i) => i.productId === product._id);
         let next;
@@ -161,7 +160,6 @@ export function StoreProvider({ children }) {
         return next;
       });
       toast(`${product.name} added to cart`, 'success');
-      return added;
     },
     [toast],
   );

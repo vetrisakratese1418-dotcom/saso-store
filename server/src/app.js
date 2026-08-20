@@ -66,10 +66,14 @@ export function createApp() {
       const signature = req.headers['stripe-signature'] || '';
       const event = verifyStripeWebhook(req.body, signature);
       if (!event) return res.status(400).json({ error: 'Invalid signature' });
-      if (event.type === 'payment_intent.succeeded') {
-        const pi = event.data.object;
-        const orderNumber = pi.metadata?.orderNumber || '';
-        await markPaidByOrderNumber(orderNumber, 'stripe', pi.id);
+      try {
+        if (event.type === 'payment_intent.succeeded') {
+          const pi = event.data.object;
+          const orderNumber = pi.metadata?.orderNumber || '';
+          await markPaidByOrderNumber(orderNumber, 'stripe', pi.id);
+        }
+      } catch (err) {
+        console.error('[webhook] stripe error:', err.message);
       }
       res.json({ received: true });
     },

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Download, Upload, Search, FileText, Minus, Plus } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Img } from '@/components/primitives';
 import { Button, Badge, Spinner, Modal, EmptyState } from '@/components/ui';
@@ -40,7 +40,7 @@ export default function AdminInventory() {
   useEffect(() => { loadLogs(); }, []);
 
   const exportCsv = async () => {
-    const res = await fetch(`${window.location.origin.replace(':3000', ':4000')}/api/admin/inventory/export`, {
+    const res = await fetch(`${API_URL}/admin/inventory/export`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('shopora_token')}` },
     });
     if (!res.ok) { toast('Export failed', 'error'); return; }

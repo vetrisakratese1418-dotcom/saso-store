@@ -4,6 +4,13 @@ import { env } from './config/env.js';
 import { lowStockProducts } from './services/stock.js';
 import { sendMail, orderHtml } from './services/email.js';
 
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+
 async function main() {
   const store = await initStore();
   const app = createApp();
@@ -29,15 +36,21 @@ async function main() {
   const timer = setInterval(checkLowStock, 6 * 60 * 60 * 1000);
   checkLowStock().catch((err) => console.error('[alert] Low stock check failed:', err.message));
 
-  const shutdown = async () => {
+  const shutdown = async (signal) => {
+    console.log(`\n[shutdown] ${signal} received, shutting down...`);
     clearInterval(timer);
+    const forceExit = setTimeout(() => {
+      console.error('[shutdown] Forced exit after timeout');
+      process.exit(1);
+    }, 10000);
+    forceExit.unref();
     server.close(async () => {
       if (store.isMongo) await closeMongo();
       process.exit(0);
     });
   };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 main().catch((err) => {

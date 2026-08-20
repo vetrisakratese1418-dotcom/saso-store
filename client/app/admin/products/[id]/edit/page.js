@@ -10,7 +10,7 @@ import { formatDateTime } from '@/lib/format';
 
 export default function EditProductPage({ params }) {
   const { id } = use(params);
-  const { settings, toast } = useStore();
+  const { toast } = useStore();
   const [stock, setStock] = useState('');
   const [reason, setReason] = useState('');
   const [adjusting, setAdjusting] = useState(false);
